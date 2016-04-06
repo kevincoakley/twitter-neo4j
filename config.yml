@@ -12,3 +12,4 @@ cypher_query: |
   MERGE (u)-[:MENTIONED { text : document.text }]->(m)
 cpu_count: all
 threads_per_cpu: 5
+tweet_path: /tweets/
