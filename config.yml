@@ -1,0 +1,14 @@
+---
+neo4j_host: 192.168.99.100:7474
+neo4j_username: neo4j
+neo4j_password: neo4j
+graph_url: http://192.168.99.100:7474/db/data/
+cypher_query: |
+  WITH {json} AS document
+  UNWIND document.user AS user
+  UNWIND document.entities.user_mentions as mention
+  MERGE (u:ScreenName {name:user.screen_name})
+  MERGE (m:ScreenName {name:mention.screen_name})
+  MERGE (u)-[:MENTIONED { text : document.text }]->(m)
+cpu_count: all
+threads_per_cpu: 5
