@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 from py2neo import Graph, authenticate
 import argparse
 import threading
@@ -13,24 +14,28 @@ from datetime import datetime
 
 def worker(thread_num):
 
-    thread_num += 1
-    count = 0
+    # If the thread number is greater than the number of tweet files, then do nothing
+    if len(tweet_files) > thread_num:
 
-    with gzip.open("/Users/kcoakley/Downloads/election%03d.gz" % thread_num) as f:
-        for line in f:
-            callback(line, thread_num)
+        count = 0
 
-            if count % 1000 == 0:
-                print "%s Thread %s Count: %s" % (str(datetime.now()), thread_num, count)
+        with gzip.open(tweet_files[thread_num]) as f:
+            for line in f:
+                submit_json_to_neo4j(line, thread_num)
 
-            count += 1
+                if count % 1000 == 0:
+                    print "%s Thread %s Count: %s" % (str(datetime.now()), thread_num, count)
 
-    f.close()
+                count += 1
+
+        f.close()
 
 
-def callback(tweet, thread_num):
+def submit_json_to_neo4j(tweet, thread_num):
+
     tweet_json = json.loads(tweet)
 
+    # Ignore invalid tweet data
     if "limit" in tweet_json:
         return
 
@@ -47,8 +52,6 @@ def callback(tweet, thread_num):
 
 
 def start_worker(processor_num):
-
-    threads_per_cpu = 1
 
     try:
         threads = []
@@ -77,6 +80,7 @@ def start_worker(processor_num):
 
 
 def pool_function(processor_num):
+
     try:
         return start_worker(processor_num)
     except KeyboardInterrupt:
@@ -111,6 +115,15 @@ if __name__ == "__main__":
         cpu_count = int(config["cpu_count"])
 
     threads_per_cpu = config["threads_per_cpu"]
+    tweet_path = config["tweet_path"]
+
+    #
+    # Get the list of tweet files to import
+    #
+    tweet_files = []
+
+    for f in os.listdir(tweet_path):
+        tweet_files.append(os.path.join(tweet_path, f))
 
     # HERE
     pool = multiprocessing.Pool(cpu_count)
