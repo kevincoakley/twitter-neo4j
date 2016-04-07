@@ -12,7 +12,7 @@ import time
 from datetime import datetime
 
 
-def worker(thread_num):
+def load_tweets_worker(thread_num):
 
     # If the thread number is greater than the number of tweet files, then do nothing
     if len(tweet_files) > thread_num:
@@ -67,7 +67,7 @@ def start_worker(processor_num):
         # Create the requested number of threads
         for j in range(threads_per_cpu):
             thread_num = (processor_num * threads_per_cpu) + j
-            t = threading.Thread(target=worker, args=(thread_num,))
+            t = threading.Thread(target=load_tweets_worker, args=(thread_num,))
             t.daemon = True
             threads.append(t)
             t.start()
@@ -135,6 +135,15 @@ if __name__ == "__main__":
 
     # Sort the filenames alphabetically
     tweet_files = sorted(tweet_files)
+
+    #
+    # Create Indexes
+    #
+    if "indexes" in config:
+        for index in config["indexes"]:
+            if index["property"] not in graph.schema.get_indexes(index["label"]):
+                print "Creating Index: :%s(%s)" % (index["label"], index["property"])
+                graph.schema.create_index(index["label"], index["property"])
 
     # HERE
     pool = multiprocessing.Pool(cpu_count)

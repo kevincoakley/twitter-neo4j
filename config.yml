@@ -10,6 +10,9 @@ cypher_query: |
   MERGE (u:ScreenName {name:user.screen_name})
   MERGE (m:ScreenName {name:mention.screen_name})
   MERGE (u)-[:MENTIONED { text : document.text }]->(m)
+indexes:
+  - label: ScreenName
+    property: name
 cpu_count: all
 threads_per_cpu: 5
 tweet_path: /tweets/
