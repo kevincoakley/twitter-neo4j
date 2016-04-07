@@ -18,13 +18,21 @@ def worker(thread_num):
     if len(tweet_files) > thread_num:
 
         count = 0
+        time_total = 0
 
         with gzip.open(tweet_files[thread_num]) as f:
             for line in f:
+                t0 = time.time()
                 submit_json_to_neo4j(line, thread_num)
+                t1 = time.time()
+                time_total += (t1-t0)
 
                 if count % 1000 == 0:
-                    print "%s Thread %s Count: %s" % (str(datetime.now()), thread_num, count)
+                    print "\n%s" % str(datetime.now())
+                    print "Filename: %s" % tweet_files[thread_num]
+                    print "Thread %s Count: %s" % (thread_num, count)
+                    print "Average Query Time: %s" % (time_total / 1000)
+                    time_total = 0
 
                 count += 1
 
