@@ -133,6 +133,9 @@ if __name__ == "__main__":
     for f in os.listdir(tweet_path):
         tweet_files.append(os.path.join(tweet_path, f))
 
+    # Sort the filenames alphabetically
+    tweet_files = sorted(tweet_files)
+
     # HERE
     pool = multiprocessing.Pool(cpu_count)
 
