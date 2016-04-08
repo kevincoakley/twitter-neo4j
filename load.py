@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import os
-from py2neo import Graph, authenticate
+import sys
+from py2neo import Graph, authenticate, ServiceRoot
+from py2neo.password import UserManager
 import argparse
 import threading
 import multiprocessing
@@ -95,6 +97,36 @@ def pool_function(processor_num):
         return "KeyboardException"
 
 
+def check_neo4j_login(server, username, password):
+
+    try_default_password = False
+
+    user_manager = UserManager.for_user(ServiceRoot("http://" + config["neo4j_host"]),
+                                        config["neo4j_username"], config["neo4j_password"])
+
+    try:
+        password_manager = user_manager.password_manager
+    except Exception as e:
+        if str(e.__class__.__name__) is "Unauthorized":
+            print "Unauthorized, trying default password"
+            try_default_password = True
+
+    if try_default_password:
+        user_manager = UserManager.for_user(ServiceRoot("http://" + config["neo4j_host"]),
+                                            config["neo4j_username"], "neo4j")
+
+        try:
+            password_manager = user_manager.password_manager
+
+            if password_manager.change(config["neo4j_password"]):
+                print("Password change succeeded")
+            else:
+                print("Password change failed")
+                sys.exit(2)
+        except Exception as e:
+            print str(e.__class__.__name__)
+            sys.exit(2)
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -112,6 +144,8 @@ if __name__ == "__main__":
     #
     config_yaml = open(args["config_yaml"], "r")
     config = yaml.load(config_yaml)
+
+    check_neo4j_login(config["neo4j_host"], config["neo4j_username"], config["neo4j_password"])
 
     authenticate(config["neo4j_host"], config["neo4j_username"], config["neo4j_password"])
     graph = Graph(config["graph_url"])
