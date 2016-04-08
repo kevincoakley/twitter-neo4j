@@ -10,6 +10,9 @@ cypher_query: |
   MERGE (u:ScreenName {name:user.screen_name})
   MERGE (m:ScreenName {name:mention.screen_name})
   MERGE (u)-[:MENTIONED { text : document.text }]->(m)
+uniqueness_constraints:
+  - label: ScreenName
+    property: name
 indexes:
   - label: ScreenName
     property: name

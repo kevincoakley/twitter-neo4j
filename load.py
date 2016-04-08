@@ -137,6 +137,15 @@ if __name__ == "__main__":
     tweet_files = sorted(tweet_files)
 
     #
+    # Create Uniqueness Constraint
+    #
+    if "uniqueness_constraints" in config:
+        for uniqueness_constraint in config["uniqueness_constraints"]:
+            if uniqueness_constraint["property"] not in graph.schema.get_uniqueness_constraints(uniqueness_constraint["label"]):
+                print "Creating Uniqueness Constraint: :%s(%s)" % (uniqueness_constraint["label"], uniqueness_constraint["property"])
+                graph.schema.create_uniqueness_constraint(uniqueness_constraint["label"], uniqueness_constraint["property"])
+
+    #
     # Create Indexes
     #
     if "indexes" in config:
