@@ -25,37 +25,67 @@ def read_tweets(thread_num):
 
     # If the thread number is greater than the number of tweet files, then do nothing
     if len(variables.tweet_files) > thread_num:
-
-        count = 0
-        time_total = 0
-
         tweet_file = variables.tweet_files[thread_num]
 
-        with gzip.open(tweet_file) as tweet_source:
-            for line in tweet_source:
-                t0 = time.time()
-                neo4j.json_cypher_query(line, thread_num)
-                t1 = time.time()
-                time_total += (t1 - t0)
+        if tweet_file.endswith(".gz"):
+            read_tweets_gzip(tweet_file, thread_num)
+        else:
+            read_tweets_plain_text(tweet_file, thread_num)
 
-                if count % 1000 == 0 and count is not 0:
-                    average_query_time = (time_total / 1000)
 
-                    print "\n%s" % str(datetime.now())
-                    print "Filename: %s" % tweet_file
-                    print "Thread %s Count: %s" % (thread_num, count)
-                    print "Average Query Time: %s" % average_query_time
+def read_tweets_plain_text(tweet_file, thread_num):
 
-                    # If the stats_log_filename has been defined, then write the average query
-                    # time to a csv file
-                    if variables.stats_log_filename is not None:
-                        stats_log = open(variables.stats_log_filename, "a")
-                        stats_log.write("%s,%s,%s,%s\n" % (datetime.now(), tweet_file, count,
-                                                           average_query_time))
-                        stats_log.close()
+    count = 0
+    query_time_total = 0
 
-                    time_total = 0
+    with open(tweet_file) as tweet_source:
+        for line in tweet_source:
 
-                count += 1
+            query_time_total = process_tweet(tweet_file, line, count, query_time_total, thread_num)
 
-        tweet_source.close()
+            count += 1
+
+    tweet_source.close()
+
+
+def read_tweets_gzip(tweet_file, thread_num):
+
+    count = 0
+    query_time_total = 0
+
+    with gzip.open(tweet_file) as tweet_source:
+        for line in tweet_source:
+
+            query_time_total = process_tweet(tweet_file, line, count, query_time_total, thread_num)
+
+            count += 1
+
+    tweet_source.close()
+
+
+def process_tweet(tweet_file, line, count, query_time_total, thread_num):
+
+    t0 = time.time()
+    neo4j.json_cypher_query(line, thread_num)
+    t1 = time.time()
+    query_time_total += (t1 - t0)
+
+    if count % 1000 == 0 and count is not 0:
+        average_query_time = (query_time_total / 1000)
+
+        print "\n%s" % str(datetime.now())
+        print "Filename: %s" % tweet_file
+        print "Thread %s Count: %s" % (thread_num, count)
+        print "Average Query Time: %s" % average_query_time
+
+        # If the stats_log_filename has been defined, then write the average query
+        # time to a csv file
+        if variables.stats_log_filename is not None:
+            stats_log = open(variables.stats_log_filename, "a")
+            stats_log.write("%s,%s,%s,%s\n" % (datetime.now(), tweet_file, count,
+                                               average_query_time))
+            stats_log.close()
+
+        query_time_total = 0
+
+    return query_time_total
