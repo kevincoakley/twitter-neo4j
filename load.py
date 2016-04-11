@@ -13,6 +13,8 @@ import gzip
 import time
 from datetime import datetime
 
+stats_log_filename = None
+
 
 def load_tweets_worker(thread_num):
 
@@ -29,11 +31,20 @@ def load_tweets_worker(thread_num):
                 t1 = time.time()
                 time_total += (t1-t0)
 
-                if count % 1000 == 0:
+                if count % 1000 == 0 and count is not 0:
                     print "\n%s" % str(datetime.now())
                     print "Filename: %s" % tweet_files[thread_num]
                     print "Thread %s Count: %s" % (thread_num, count)
                     print "Average Query Time: %s" % (time_total / 1000)
+
+                    # If the stats_log_filename has been defined, then write the average query
+                    # time to a csv file
+                    if stats_log_filename is not None:
+                        stats_log = open(stats_log_filename, "a")
+                        stats_log.write("%s,%s,%s,%s\n" % (datetime.now(), tweet_files[thread_num],
+                                                         count, (time_total / 1000)))
+                        stats_log.close()
+
                     time_total = 0
 
                 count += 1
@@ -137,7 +148,16 @@ if __name__ == "__main__":
                         help="Configuration YAML File.",
                         required=True)
 
+    parser.add_argument("-l",
+                        metavar="stats_log_filename",
+                        dest="stats_log_filename",
+                        default=None,
+                        help="Filename for the stats log file.",
+                        required=False)
+
     args = vars(parser.parse_args())
+
+    stats_log_filename = args["stats_log_filename"]
 
     #
     # Read the config
