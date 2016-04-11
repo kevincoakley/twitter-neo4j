@@ -42,7 +42,7 @@ def load_tweets_worker(thread_num):
                     if stats_log_filename is not None:
                         stats_log = open(stats_log_filename, "a")
                         stats_log.write("%s,%s,%s,%s\n" % (datetime.now(), tweet_files[thread_num],
-                                                         count, (time_total / 1000)))
+                                                           count, (time_total / 1000)))
                         stats_log.close()
 
                     time_total = 0
@@ -112,19 +112,17 @@ def check_neo4j_login(server, username, password):
 
     try_default_password = False
 
-    user_manager = UserManager.for_user(ServiceRoot("http://" + config["neo4j_host"]),
-                                        config["neo4j_username"], config["neo4j_password"])
+    user_manager = UserManager.for_user(ServiceRoot("http://" + server), username, password)
 
     try:
-        password_manager = user_manager.password_manager
+        user_manager.password_manager
     except Exception as e:
         if str(e.__class__.__name__) is "Unauthorized":
             print "Unauthorized, trying default password"
             try_default_password = True
 
     if try_default_password:
-        user_manager = UserManager.for_user(ServiceRoot("http://" + config["neo4j_host"]),
-                                            config["neo4j_username"], "neo4j")
+        user_manager = UserManager.for_user(ServiceRoot("http://" + server), username, "neo4j")
 
         try:
             password_manager = user_manager.password_manager
