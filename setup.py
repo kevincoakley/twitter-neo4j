@@ -3,8 +3,9 @@
 try:
     from setuptools import setup
     extra = dict(install_requires=[
-        'py2neo>=2.0.8',
+        'py2neo>=3',
         'PyYAML>=3.11',
+        'requests>=2.9.1',
     ],
         include_package_data=True,
     )
@@ -19,7 +20,7 @@ def readme():
 
 
 setup(name="twitter-neo4j",
-      version="0.0.2",
+      version="0.0.3",
       description="Loads twitter JSON into Neo4j",
       long_description=readme(),
       author="Kevin Coakley",
