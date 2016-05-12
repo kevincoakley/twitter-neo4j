@@ -5,39 +5,43 @@ import twitterneo4j.variables as variables
 import sys
 import json
 import time
-from py2neo import ServiceRoot
-from py2neo.password import UserManager
+import requests
 
 
 def check_login():
 
-    try_default_password = False
+    http = "https"
 
-    user_manager = UserManager.for_user(ServiceRoot("http://" + variables.neo4j_host),
-                                        variables.neo4j_username, variables.neo4j_password)
-
+    # Check if the server supports https, fall back to http if it doesn't
     try:
-        user_manager.password_manager
-    except Exception as e:
-        if str(e.__class__.__name__) is "Unauthorized":
-            print "Unauthorized, trying default password"
-            try_default_password = True
+        requests.get("https://%s/user/%s" % (variables.neo4j_host, variables.neo4j_username))
+    except requests.exceptions.SSLError:
+        http = "http"
 
-    if try_default_password:
-        user_manager = UserManager.for_user(ServiceRoot("http://" + variables.neo4j_host),
-                                            variables.neo4j_username, "neo4j")
+    r = requests.get("%s://%s/user/%s" % (http, variables.neo4j_host, variables.neo4j_username),
+                     auth=(variables.neo4j_username, variables.neo4j_password))
+    # If the password is incorrect, try the default password before exiting
+    if r.status_code != requests.codes.ok:
+        # Try default password
+        r = requests.get("%s://%s/user/%s" % (http, variables.neo4j_host, variables.neo4j_username),
+                         auth=(variables.neo4j_username, "neo4j"))
+        # If the default password is correct, then change the password to what is in the config
+        if r.status_code == requests.codes.ok:
+            payload = {'password': variables.neo4j_password}
 
-        try:
-            password_manager = user_manager.password_manager
-
-            if password_manager.change(variables.neo4j_password):
-                print("Password change succeeded")
+            r = requests.post("%s://%s/user/%s/password" % (http, variables.neo4j_host,
+                                                              variables.neo4j_username),
+                              auth=(variables.neo4j_username, "neo4j"), data=payload)
+            if r.status_code == requests.codes.ok:
+                print "Password Changed"
             else:
-                print("Password change failed")
+                print "Password Change Failed: %s" % r.text
                 sys.exit(2)
-        except Exception as e:
-            print str(e.__class__.__name__)
+        else:
+            print "Invalid Username and/or Password"
             sys.exit(2)
+    else:
+        return
 
 
 def create_uniqueness_constraints():
@@ -71,7 +75,7 @@ def json_cypher_query(tweet, thread_num):
         return
 
     try:
-        variables.graph_object.cypher.run(variables.cypher_query, json=tweet_json)
+        variables.graph_object.run(variables.cypher_query, json=tweet_json)
     except Exception as e:
         print "Exception: %s (%s)" % (str(e), thread_num)
         # Slow down if too many files are open
