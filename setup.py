@@ -5,6 +5,7 @@ try:
     extra = dict(install_requires=[
         'py2neo>=3',
         'PyYAML>=3.11',
+        'requests>=2.9.1',
     ],
         include_package_data=True,
     )
