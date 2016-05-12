@@ -3,7 +3,7 @@
 try:
     from setuptools import setup
     extra = dict(install_requires=[
-        'py2neo>=2.0.8',
+        'py2neo>=3',
         'PyYAML>=3.11',
     ],
         include_package_data=True,

@@ -1,2 +1,2 @@
-py2neo>=2.0.8
+py2neo>=3
 PyYAML>=3.11
