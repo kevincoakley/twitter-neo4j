@@ -147,9 +147,15 @@ def save_tweet_file_position(tweet_file, position, line_num):
         tweet_position = yaml.load(tweet_position_yaml)
         tweet_position_yaml.close()
 
-    tweet_position[tweet_file] = {"position": position,
-                                  "line_num": line_num,
-                                  "datetime": datetime.now()}
+    try:
+        dt = datetime.now()
+        tweet_position[tweet_file] = {"position": position,
+                                      "line_num": line_num,
+                                      "datetime": dt}
+    except TypeError:
+        print "TypeError: tweet_file: %s position: %s line_num: %s datetime: %s" % \
+              (tweet_file, position, line_num, dt)
+        return
 
     with open(tweet_position_file, 'w') as tweet_position_yaml:
         tweet_position_yaml.write(yaml.dump(tweet_position, default_flow_style=False))
