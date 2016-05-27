@@ -8,6 +8,7 @@ import gzip
 import json
 import time
 import yaml
+import errno
 import fcntl
 from datetime import datetime
 
@@ -179,7 +180,7 @@ def tweet_position_file_lock(tweet_position_yaml):
             return
         except IOError as e:
             # raise on unrelated IOErrors
-            if ex.errno != errno.EAGAIN:
+            if e.errno != errno.EAGAIN:
                 raise
         else:
             time.sleep(0.1)
