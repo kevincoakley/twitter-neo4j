@@ -20,7 +20,7 @@ def readme():
 
 
 setup(name="twitter-neo4j",
-      version="0.0.3",
+      version="0.0.4",
       description="Loads twitter JSON into Neo4j",
       long_description=readme(),
       author="Kevin Coakley",
