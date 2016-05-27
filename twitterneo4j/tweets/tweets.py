@@ -8,6 +8,7 @@ import gzip
 import json
 import time
 import yaml
+import fcntl
 from datetime import datetime
 
 
@@ -127,7 +128,9 @@ def get_tweet_file_position(tweet_file):
 
     if os.path.isfile(tweet_position_file):
         tweet_position_yaml = open(tweet_position_file, "r")
+        tweet_position_file_lock(tweet_position_yaml)
         tweet_position = yaml.load(tweet_position_yaml)
+        tweet_position_file_unlock(tweet_position_yaml)
         tweet_position_yaml.close()
 
         if tweet_file in tweet_position:
@@ -144,11 +147,14 @@ def save_tweet_file_position(tweet_file, position, line_num):
 
     if os.path.isfile(tweet_position_file):
         tweet_position_yaml = open(tweet_position_file, "r")
+        tweet_position_file_lock(tweet_position_yaml)
         tweet_position = yaml.load(tweet_position_yaml)
+        tweet_position_file_unlock(tweet_position_yaml)
         tweet_position_yaml.close()
 
+    dt = datetime.now()
+
     try:
-        dt = datetime.now()
         tweet_position[tweet_file] = {"position": position,
                                       "line_num": line_num,
                                       "datetime": dt}
@@ -157,6 +163,29 @@ def save_tweet_file_position(tweet_file, position, line_num):
               (tweet_file, position, line_num, dt)
         return
 
-    with open(tweet_position_file, 'w') as tweet_position_yaml:
-        tweet_position_yaml.write(yaml.dump(tweet_position, default_flow_style=False))
+    tweet_position_yaml = open(tweet_position_file, 'w+')
+    tweet_position_file_lock(tweet_position_yaml)
+    tweet_position_yaml.write(yaml.dump(tweet_position, default_flow_style=False))
+    tweet_position_file_unlock(tweet_position_yaml)
     tweet_position_yaml.close()
+
+
+def tweet_position_file_lock(tweet_position_yaml):
+
+    # Aquire a lock on the file
+    while True:
+        try:
+            fcntl.flock(tweet_position_yaml, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except IOError as e:
+            # raise on unrelated IOErrors
+            if ex.errno != errno.EAGAIN:
+                raise
+        else:
+            time.sleep(0.1)
+
+
+def tweet_position_file_unlock(tweet_position_yaml):
+
+    # Unlock the file
+    fcntl.flock(tweet_position_yaml, fcntl.LOCK_UN)
